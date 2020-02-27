@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Movie Catalogue</string>
+    <string name="tab_text_1">Movie</string>
+    <string name="tab_text_2">TV Show</string>
+    <string name="title_movie">Title Movie</string>
+    <string name="description">Description</string>
+    <string name="overview">Overview</string>
+    <string name="change_language_settings">Change Language Settings</string>
+    <string name="image_text">Image</string>
+    <string name="favorite">Favorite</string>
+</resources>
