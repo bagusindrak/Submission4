@@ -34,6 +34,7 @@ import static com.thinking.submission4.db.DatabaseContract.MovieColumns.ID;
 import static com.thinking.submission4.db.DatabaseContract.MovieColumns.NAME;
 import static com.thinking.submission4.db.DatabaseContract.MovieColumns.PHOTO;
 import static com.thinking.submission4.ui.Constant.API_KEY;
+import static com.thinking.submission4.ui.Constant.ARG_SECTION_NUMBER;
 import static com.thinking.submission4.ui.Constant.POSTER_SIZE;
 import static com.thinking.submission4.ui.Constant.SECTION_MOVIE;
 

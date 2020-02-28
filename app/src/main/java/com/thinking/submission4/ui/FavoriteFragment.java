@@ -78,15 +78,16 @@ public class FavoriteFragment extends Fragment{
 
       if (getArguments() != null) {
          index = getArguments().getInt(ARG_SECTION_NUMBER);
-         movieViewModel.setDBHelper(index);
-         movieViewModel.openDBHelper(index);
          section = index;
          Intent intent = new Intent();
          intent.putExtra(ARG_SECTION_NUMBER, index);
          showSnackbarMessage(String.valueOf(index));
+         movieViewModel.setDBHelper(index);
+         movieViewModel.openDBHelper(index);
       }
 
       if (index == SECTION_MOVIE) {
+
          movieViewModel.setMovieFav();
          showLoading(true);
          movieViewModel.getMovieFav().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
@@ -99,6 +100,8 @@ public class FavoriteFragment extends Fragment{
             }
          });
       } else {
+
+         movieViewModel.setMovieFav();
          showLoading(true);
          movieViewModel.getTvShowFav().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
             @Override
