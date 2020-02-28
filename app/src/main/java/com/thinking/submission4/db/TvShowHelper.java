@@ -9,17 +9,18 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import static android.provider.BaseColumns._ID;
 import static com.thinking.submission4.db.DatabaseContract.MovieColumns.ID;
+import static com.thinking.submission4.db.DatabaseContract.TABLE_MOVIE;
 import static com.thinking.submission4.db.DatabaseContract.TABLE_TV_SHOW;
 
 public class TvShowHelper {
-   private static final String DATABASE_TABLE_TV_SHOW = TABLE_TV_SHOW;
-   private static DatabaseHelper databaseHelper;
+   private static final String DATABASE_TABLE = TABLE_TV_SHOW;
+   private static DBHelperTvShow dbHelperTvShow;
    private static TvShowHelper INSTANCE;
 
    private static SQLiteDatabase database;
 
    private TvShowHelper(Context context) {
-      databaseHelper = new DatabaseHelper(context);
+      dbHelperTvShow = new DBHelperTvShow(context);
    }
 
    //   menginisiasi database.
@@ -36,19 +37,19 @@ public class TvShowHelper {
 
    //   membuka dan menutup koneksi ke database-nya.
    public void open() throws SQLException {
-      database = databaseHelper.getWritableDatabase();
+      database = dbHelperTvShow.getWritableDatabase();
    }
 
    public void close() {
-      databaseHelper.close();
+      dbHelperTvShow.close();
       if (database.isOpen())
          database.close();
    }
 
    //   mengambil data.
-   public Cursor queryAllTvShow() {
+   public Cursor queryAll() {
       return database.query(
-              DATABASE_TABLE_TV_SHOW,
+              DATABASE_TABLE,
               null,
               null,
               null,
@@ -57,11 +58,10 @@ public class TvShowHelper {
               _ID + " ASC");
    }
 
-
    //   mengambil data dengan id tertentu.
-   public Cursor queryByIdTvShow(String id) {
+   public Cursor queryById(String id) {
       return database.query(
-              DATABASE_TABLE_TV_SHOW,
+              DATABASE_TABLE,
               null,
               ID + " = ?",
               new String[]{id},
@@ -72,17 +72,12 @@ public class TvShowHelper {
    }
 
    //   menyimpan data.
-   public long insertTvShow(ContentValues values) {
-      return database.insert(DATABASE_TABLE_TV_SHOW, null, values);
-   }
-
-   //   memperbaharui data.
-   public int updateTvShow(String id, ContentValues values) {
-      return database.update(DATABASE_TABLE_TV_SHOW, values, _ID + " = ?", new String[]{id});
+   public long insert(ContentValues values) {
+      return database.insert(DATABASE_TABLE, null, values);
    }
 
    //   menghapus data.
-   public int deleteByIdTvShow(String id) {
-      return database.delete(DATABASE_TABLE_TV_SHOW, _ID + " = ?", new String[]{id});
+   public int deleteById(String id) {
+      return database.delete(DATABASE_TABLE, ID + " = ?", new String[]{id});
    }
 }

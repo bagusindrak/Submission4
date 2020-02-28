@@ -12,36 +12,34 @@ import android.widget.ProgressBar;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.thinking.submission4.R;
-import com.thinking.submission4.db.MovieHelper;
-import com.thinking.submission4.db.TvShowHelper;
 import com.thinking.submission4.entity.Movie;
 import com.thinking.submission4.ui.adapter.CardViewMovieAdapter;
 
 import java.util.ArrayList;
 import java.util.Locale;
 
+import static com.thinking.submission4.ui.Constant.ARG_SECTION_NUMBER;
+import static com.thinking.submission4.ui.Constant.SECTION_MOVIE;
+
 /**
  * A simple {@link Fragment} subclass.
  */
-public class FavoriteFragment extends Fragment implements LoadMoviesCallback {
+public class FavoriteFragment extends Fragment {
 
-   private static final String ARG_SECTION_NUMBER = "section_number";
-   private static final int SECTION_MOVIE = 1;
+
    private RecyclerView rvMovies;
    private ArrayList<Movie> listMovie = new ArrayList<>();
    private ProgressBar progressBar;
    private MovieViewModel movieViewModel;
    private CardViewMovieAdapter cardViewHeroAdapter;
+   private int section;
    private static String sDefSystemLanguage;
-   private MovieHelper movieHelper;
-   private TvShowHelper tvShowHelper;
 
 
    public static FavoriteFragment newInstance(int index) {
@@ -61,55 +59,58 @@ public class FavoriteFragment extends Fragment implements LoadMoviesCallback {
       return inflater.inflate(R.layout.fragment_favorite, container, false);
    }
 
-   @Override
-   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-      super.onViewCreated(view, savedInstanceState);
-
+   private void initComponent(View view) {
       rvMovies = view.findViewById(R.id.rv_movies);
       rvMovies.setHasFixedSize(true);
       progressBar = view.findViewById(R.id.progressBar);
       movieViewModel = new ViewModelProvider(getViewModelStore(),
               new ViewModelProvider.NewInstanceFactory()).get(MovieViewModel.class);
       showRecyclerCardView();
+      movieViewModel.setActivity(getActivity());
+   }
 
-      movieHelper = MovieHelper.getInstance(getActivity().getApplicationContext());
-      tvShowHelper = TvShowHelper.getInstance(getActivity().getApplicationContext());
-
+   @Override
+   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+      super.onViewCreated(view, savedInstanceState);
+      initComponent(view);
 
       int index = 1;
+         movieViewModel.setDBHelper(index);
+         movieViewModel.openDBHelper(index);
+
       if (getArguments() != null) {
          index = getArguments().getInt(ARG_SECTION_NUMBER);
+         section = index;
          Intent intent = new Intent();
          intent.putExtra(ARG_SECTION_NUMBER, index);
       }
       if (index == SECTION_MOVIE) {
-         movieHelper.open();
-         movieViewModel.setMovieFavorite(movieHelper, this);
+         movieViewModel.setFav(index);
          showLoading(true);
-         // ROTATE STATE
-         movieViewModel.getMoviesFavorite().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
-            @Override
-            public void onChanged(ArrayList<Movie> movies) {
-               if (movies != null) {
-                  showLoading(false);
-                  cardViewHeroAdapter.setListMovies(movies);
-               }
-            }
-         });
+         if(movieViewModel.getFavMovies() == null)
+            showSnackbarMessage("KOSONG MOVIE");
+//         movieViewModel.getFavMovies().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
+//            @Override
+//            public void onChanged(ArrayList<Movie> movies) {
+//               if (movies != null) {
+//                  cardViewHeroAdapter.setListMovies(movies);
+//                  showLoading(false);
+//               }
+//            }
+//         });
       } else {
-         tvShowHelper.open();
-         movieViewModel.setTvShowFavorite(tvShowHelper, this);
-         showLoading(true);
-         // ROTATE STATE
-         movieViewModel.getTvShowsFavorite().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
-            @Override
-            public void onChanged(ArrayList<Movie> movies) {
-               if (movies != null) {
-                  showLoading(false);
-                  cardViewHeroAdapter.setListMovies(movies);
-               }
-            }
-         });
+         movieViewModel.setFav(index);
+         showSnackbarMessage("SET TV");
+//         showLoading(true);
+//         movieViewModel.getFavTvShows().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
+//            @Override
+//            public void onChanged(ArrayList<Movie> movies) {
+//               if (movies != null) {
+//                  cardViewHeroAdapter.setListMovies(movies);
+//                  showLoading(false);
+//               }
+//            }
+//         });
       }
    }
 
@@ -120,16 +121,15 @@ public class FavoriteFragment extends Fragment implements LoadMoviesCallback {
       rvMovies.setAdapter(cardViewHeroAdapter);
    }
 
+   private void showSnackbarMessage(String message) {
+      Snackbar.make(rvMovies, message, Snackbar.LENGTH_SHORT).show();
+   }
    private void showLoading(Boolean state) {
       if (state) {
          progressBar.setVisibility(View.VISIBLE);
       } else {
          progressBar.setVisibility(View.GONE);
       }
-   }
-
-   private void showSnackbarMessage(String message) {
-      Snackbar.make(rvMovies, message, Snackbar.LENGTH_SHORT).show();
    }
 
    @Override
@@ -146,35 +146,6 @@ public class FavoriteFragment extends Fragment implements LoadMoviesCallback {
    @Override
    public void onDestroy() {
       super.onDestroy();
-   }
-
-   @Override
-   public void preExecute() {
-      getActivity().runOnUiThread(new Runnable() {
-         @Override
-         public void run() {
-            showLoading(true);
-         }
-      });
-   }
-
-   @Override
-   public void postExecute(ArrayList<Movie> movies) {
-      showLoading(true);
-      if (movies.size() > 0) {
-         movieViewModel.getMoviesFavorite().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
-            @Override
-            public void onChanged(ArrayList<Movie> movies) {
-               if (movies != null) {
-                  showLoading(false);
-                  cardViewHeroAdapter.setListMovies(movies);
-               }
-            }
-         });
-         showLoading(false);
-      } else {
-         showLoading(false);
-         showSnackbarMessage("Tidak ada data saat ini");
-      }
+      movieViewModel.closeDBHelper(section);
    }
 }

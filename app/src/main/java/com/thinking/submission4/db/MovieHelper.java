@@ -12,14 +12,14 @@ import static com.thinking.submission4.db.DatabaseContract.MovieColumns.ID;
 import static com.thinking.submission4.db.DatabaseContract.TABLE_MOVIE;
 
 public class MovieHelper {
-   private static final String DATABASE_TABLE_MOVIE = TABLE_MOVIE;
-   private static DatabaseHelper dataBaseHelper;
+   private static final String DATABASE_TABLE = TABLE_MOVIE;
+   private static DBHelperMovie dbHelperMovie;
    private static MovieHelper INSTANCE;
 
    private static SQLiteDatabase database;
 
    private MovieHelper(Context context) {
-      dataBaseHelper = new DatabaseHelper(context);
+      dbHelperMovie = new DBHelperMovie(context);
    }
 
    //   menginisiasi database.
@@ -36,19 +36,19 @@ public class MovieHelper {
 
    //   membuka dan menutup koneksi ke database-nya.
    public void open() throws SQLException {
-      database = dataBaseHelper.getWritableDatabase();
+      database = dbHelperMovie.getWritableDatabase();
    }
 
    public void close() {
-      dataBaseHelper.close();
+      dbHelperMovie.close();
       if (database.isOpen())
          database.close();
    }
 
    //   mengambil data.
-   public Cursor queryAllMovie() {
+   public Cursor queryAll() {
       return database.query(
-              DATABASE_TABLE_MOVIE,
+              DATABASE_TABLE,
               null,
               null,
               null,
@@ -58,9 +58,9 @@ public class MovieHelper {
    }
 
    //   mengambil data dengan id tertentu.
-   public Cursor queryByIdMovie(String id) {
+   public Cursor queryById(String id) {
       return database.query(
-              DATABASE_TABLE_MOVIE,
+              DATABASE_TABLE,
               null,
               ID + " = ?",
               new String[]{id},
@@ -70,19 +70,13 @@ public class MovieHelper {
               null);
    }
 
-
    //   menyimpan data.
-   public long insertMovie(ContentValues values) {
-      return database.insert(DATABASE_TABLE_MOVIE, null, values);
-   }
-
-   //   memperbaharui data.
-   public int updateMovie(String id, ContentValues values) {
-      return database.update(DATABASE_TABLE_MOVIE, values, _ID + " = ?", new String[]{id});
+   public long insert(ContentValues values) {
+      return database.insert(DATABASE_TABLE, null, values);
    }
 
    //   menghapus data.
-   public int deleteByIdMovie(String id) {
-      return database.delete(DATABASE_TABLE_MOVIE, ID + " = ?", new String[]{id});
+   public int deleteById(String id) {
+      return database.delete(DATABASE_TABLE, ID + " = ?", new String[]{id});
    }
 }

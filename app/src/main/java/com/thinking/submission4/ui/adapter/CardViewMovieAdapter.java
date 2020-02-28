@@ -26,6 +26,9 @@ import com.thinking.submission4.ui.DetailActivity;
 
 import java.util.ArrayList;
 
+import static com.thinking.submission4.ui.Constant.EXTRA_MOVIE;
+import static com.thinking.submission4.ui.Constant.EXTRA_POSITION;
+
 public class CardViewMovieAdapter extends RecyclerView.Adapter<CardViewMovieAdapter.CardViewViewHolder> {
    private ArrayList<Movie> listMovies = new ArrayList<>();
 
@@ -35,17 +38,6 @@ public class CardViewMovieAdapter extends RecyclerView.Adapter<CardViewMovieAdap
       }
       listMovies.addAll(items);
       notifyDataSetChanged();
-   }
-
-   public void addItem(Movie movie) {
-      this.listMovies.add(movie);
-      notifyItemInserted(listMovies.size() - 1);
-   }
-
-   public void removeItem(int position) {
-      this.listMovies.remove(position);
-      notifyItemRemoved(position);
-      notifyItemRangeChanged(position, listMovies.size());
    }
 
    @Override
@@ -84,7 +76,6 @@ public class CardViewMovieAdapter extends RecyclerView.Adapter<CardViewMovieAdap
               })
               .apply(new RequestOptions().override(350, 550))
               .into(holder.imgPhoto);
-
       holder.tvName.setText(movies.getName());
       holder.tvDescription.setText(movies.getDescription());
       holder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -92,8 +83,8 @@ public class CardViewMovieAdapter extends RecyclerView.Adapter<CardViewMovieAdap
          public void onClick(View v) {
 
             Intent moveWithObjectIntent = new Intent(v.getContext(), DetailActivity.class);
-            moveWithObjectIntent.putExtra(DetailActivity.EXTRA_MOVIE, listMovies.get(holder.getAdapterPosition()));
-//            moveWithObjectIntent.putExtra(DetailActivity.EXTRA_POSITION, position);
+            moveWithObjectIntent.putExtra(EXTRA_POSITION, holder.getAdapterPosition());
+            moveWithObjectIntent.putExtra(EXTRA_MOVIE, listMovies.get(holder.getAdapterPosition()));
             v.getContext().startActivity(moveWithObjectIntent);
          }
       });

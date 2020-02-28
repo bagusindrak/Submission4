@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
@@ -29,22 +30,29 @@ import com.thinking.submission4.db.MovieHelper;
 import com.thinking.submission4.db.TvShowHelper;
 import com.thinking.submission4.entity.Movie;
 
+import static com.thinking.submission4.ui.Constant.ARG_SECTION_NUMBER;
+import static com.thinking.submission4.ui.Constant.EXTRA_MOVIE;
+import static com.thinking.submission4.ui.Constant.EXTRA_POSITION;
+
 
 public class DetailActivity extends AppCompatActivity {
 
-   public static final String EXTRA_MOVIE = "extra_movie";
-   public static final String EXTRA_POSITION = "extra_position";
-   private static final String ARG_SECTION_NUMBER = "section_number";
    private TextView tvName, tvDescription;
    private ImageView img;
    private ProgressBar progressBar;
    private boolean isFav = false;
+   private int index;
+   private MovieViewModel movieViewModel;
 
-   private int position, index;
+   public static final int REQUEST_ADD = 100;
+   public static final int RESULT_ADD = 101;
+   public static final int REQUEST_UPDATE = 200;
+   public static final int RESULT_UPDATE = 201;
+   public static final int RESULT_DELETE = 301;
+   private final int ALERT_DIALOG_CLOSE = 10;
+   private final int ALERT_DIALOG_DELETE = 20;
 
    private Movie movie;
-   private MovieHelper movieHelper;
-   private TvShowHelper tvShowHelper;
 
    @Override
    protected void onCreate(Bundle savedInstanceState) {
@@ -55,14 +63,17 @@ public class DetailActivity extends AppCompatActivity {
       tvDescription = findViewById(R.id.txt_description);
       img = findViewById(R.id.img_photo);
       progressBar = findViewById(R.id.progressBar);
-
-      tvShowHelper = TvShowHelper.getInstance(getApplicationContext());
-      movieHelper = MovieHelper.getInstance(getApplicationContext());
-
+      movieViewModel = new ViewModelProvider(getViewModelStore(),
+              new ViewModelProvider.NewInstanceFactory()).get(MovieViewModel.class);
+      movieViewModel.setActivity(this);
       movie = getIntent().getParcelableExtra(EXTRA_MOVIE);
+      index = getIntent().getIntExtra(ARG_SECTION_NUMBER, 0);
+      movieViewModel.setDBHelper(index);
+      movieViewModel.openDBHelper(index);
+
       showLoading(true);
       if (movie != null) {
-         index = getIntent().getIntExtra(ARG_SECTION_NUMBER, 0);
+//         position = getIntent().getIntExtra(EXTRA_POSITION, 0);
          tvName.setText(movie.getName());
          tvDescription.setText(movie.getDescription());
          Glide.with(this)
@@ -107,57 +118,34 @@ public class DetailActivity extends AppCompatActivity {
    @Override
    public boolean onPrepareOptionsMenu(Menu menu) {
       MenuItem item = menu.findItem(R.id.action_favorite);
-
-      if(isFavMovie() || isFavTvShow()){
-         isFav = true;
-         item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_favorite));
-      }else {
-         isFav = false;
-         item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_favorite_border));
+      if (movie != null) {
+         if (movieViewModel.isFavDB(movie, index)) {
+            setIconFav(item, true);
+         } else {
+            setIconFav(item, false);
+         }
       }
       item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
          @Override
          public boolean onMenuItemClick(MenuItem item) {
             if (!isFav) {
-
-               ContentValues values = new ContentValues();
-               long result;
-                  values.put(DatabaseContract.MovieColumns.ID, movie.getId());
-                  values.put(DatabaseContract.MovieColumns.NAME, movie.getName());
-                  values.put(DatabaseContract.MovieColumns.DESCRIPTION, movie.getDescription());
-                  values.put(DatabaseContract.MovieColumns.PHOTO, movie.getPhoto());
-               if (index == 1) {
-
-                  movieHelper.open();
-                  result = movieHelper.insertMovie(values);
-               } else {
-                  tvShowHelper.open();
-                  result = tvShowHelper.insertTvShow(values);
-               }
-               if (result > 0) {
-                  isFav = true;
-                  item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_favorite));
+               if (movieViewModel.insertFav(movie, index) > 0) {
+                  setIconFav(item, true);
                   showSnackbarMessage("Sukses nemambah data");
                } else {
-                  isFav = false;
-                  item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_favorite_border));
+                  setIconFav(item, false);
                   showSnackbarMessage("Gagal nemambah data");
                }
-            } else {
-               long result;
-               if (index == 1) {
-                  result = movieHelper.deleteByIdMovie(String.valueOf(movie.getId()));
-               } else {
-                  result = tvShowHelper.deleteByIdTvShow(String.valueOf(movie.getId()));
-               }
-               if (result > 0) {
-                  item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_favorite_border));
-                  isFav = false;
+            }else {
+               if(movieViewModel.deleteFav(movie, index) > 0){
+                  setIconFav(item,false);
                   showSnackbarMessage("Sukses menghapus data");
-               } else {
-                  Toast.makeText(DetailActivity.this, "Gagal menghapus data", Toast.LENGTH_SHORT).show();
+               }else {
+                  setIconFav(item,true);
+                  showSnackbarMessage("Gagal menghapus data");
                }
             }
+
             return true;
          }
       });
@@ -178,18 +166,25 @@ public class DetailActivity extends AppCompatActivity {
       return super.onOptionsItemSelected(item);
    }
 
-   private boolean isFavMovie() {
-      Cursor cursor = movieHelper.queryByIdMovie(String.valueOf(movie.getId()));
-      return cursor.getCount() > 0;
-   }
-
-   private boolean isFavTvShow() {
-      Cursor cursor = tvShowHelper.queryByIdTvShow(String.valueOf(movie.getId()));
-      return cursor.getCount() > 0;
+   @Override
+   protected void onDestroy() {
+      super.onDestroy();
+      movieViewModel.closeDBHelper(index);
    }
 
    private void showSnackbarMessage(String message) {
       Snackbar.make(findViewById(R.id.scroll), message, Snackbar.LENGTH_SHORT).show();
+   }
+
+   private void setIconFav(MenuItem item, boolean state) {
+      if (!state) {
+         isFav = false;
+         item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_favorite_border));
+      } else {
+         isFav = true;
+         item.setIcon(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_favorite));
+      }
+
    }
 
 }

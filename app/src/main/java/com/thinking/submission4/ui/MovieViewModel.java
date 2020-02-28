@@ -1,8 +1,12 @@
 package com.thinking.submission4.ui;
 
+import android.app.Activity;
+import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.view.View;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -11,10 +15,10 @@ import androidx.lifecycle.ViewModel;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.thinking.submission4.BuildConfig;
+import com.thinking.submission4.R;
 import com.thinking.submission4.db.MovieHelper;
 import com.thinking.submission4.db.TvShowHelper;
 import com.thinking.submission4.entity.Movie;
-import com.thinking.submission4.helper.MappingHelper;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -24,11 +28,23 @@ import java.util.ArrayList;
 
 import cz.msebera.android.httpclient.Header;
 
-public class MovieViewModel extends ViewModel implements LoadMoviesCallback {
+import static com.thinking.submission4.db.DatabaseContract.MovieColumns.DESCRIPTION;
+import static com.thinking.submission4.db.DatabaseContract.MovieColumns.ID;
+import static com.thinking.submission4.db.DatabaseContract.MovieColumns.NAME;
+import static com.thinking.submission4.db.DatabaseContract.MovieColumns.PHOTO;
+import static com.thinking.submission4.ui.Constant.SECTION_MOVIE;
+
+public class MovieViewModel extends ViewModel implements LoadCallback {
    private static final String API_KEY = BuildConfig.TMDB_API_KEY;
    private static final String POSTER_SIZE = "w154";
 
    private MutableLiveData<ArrayList<Movie>> listMovies = new MutableLiveData<>();
+
+   private TvShowHelper tvShowHelper;
+   private MovieHelper movieHelper;
+   private Activity activity;
+
+   private ArrayList<Movie> list = new ArrayList<>();
 
    void setMovie() {
       AsyncHttpClient client = new AsyncHttpClient();
@@ -104,65 +120,127 @@ public class MovieViewModel extends ViewModel implements LoadMoviesCallback {
       return listMovies;
    }
 
-   void setMovieFavorite(MovieHelper movieHelper, LoadMoviesCallback loadMoviesCallback) {
-      new LoadMoviesAsync(movieHelper, loadMoviesCallback).execute();
+   void setActivity(Activity activity) {
+      this.activity = activity;
    }
 
-   void setTvShowFavorite(TvShowHelper tvShowHelper, LoadMoviesCallback loadMoviesCallback) {
-      new LoadTvShowAsync(tvShowHelper, loadMoviesCallback).execute();
+   void setDBHelper(int index) {
+      if (index == SECTION_MOVIE)
+         movieHelper = MovieHelper.getInstance(activity.getApplicationContext());
+      else
+         tvShowHelper = TvShowHelper.getInstance(activity.getApplicationContext());
    }
 
-   LiveData<ArrayList<Movie>> getMoviesFavorite() {
+   void openDBHelper(int index) {
+      if (index == SECTION_MOVIE)
+         movieHelper.open();
+      else
+         tvShowHelper.open();
+   }
+
+   void closeDBHelper(int index) {
+      if (index == SECTION_MOVIE)
+         movieHelper.close();
+      else
+         tvShowHelper.close();
+   }
+
+   boolean isFavDB(Movie movie, int index) {
+      Cursor cursor;
+      if (index == SECTION_MOVIE)
+         cursor = movieHelper.queryById(movie.getId());
+      else
+         cursor = tvShowHelper.queryById(movie.getId());
+
+      return cursor.getCount() > 0;
+   }
+
+   long insertFav(Movie movie, int index) {
+      ContentValues values = new ContentValues();
+      values.put(ID, movie.getId());
+      values.put(NAME, movie.getName());
+      values.put(DESCRIPTION, movie.getDescription());
+      values.put(PHOTO, movie.getPhoto());
+      if (index == SECTION_MOVIE)
+         return movieHelper.insert(values);
+      else
+         return tvShowHelper.insert(values);
+   }
+
+   int deleteFav(Movie movie, int index) {
+      if (index == SECTION_MOVIE)
+         return movieHelper.deleteById(String.valueOf(movie.getId()));
+      else
+         return tvShowHelper.deleteById(String.valueOf(movie.getId()));
+   }
+
+   void setFav(int index) {
+      if (index == SECTION_MOVIE)
+         new LoadMoviesAsync(movieHelper, this).execute();
+      else
+         new LoadTvShowsAsync(tvShowHelper, this).execute();
+   }
+
+   LiveData<ArrayList<Movie>> getFavMovies() {
       return listMovies;
    }
 
-   LiveData<ArrayList<Movie>> getTvShowsFavorite() {
+   LiveData<ArrayList<Movie>> getFavTvShows() {
       return listMovies;
    }
 
    @Override
    public void preExecute() {
-
+      activity.runOnUiThread(new Runnable() {
+         @Override
+         public void run() {
+//            activity.findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
+         }
+      });
    }
 
    @Override
    public void postExecute(ArrayList<Movie> movies) {
-      listMovies.postValue(movies);
+//      activity.findViewById(R.id.progressBar).setVisibility(View.GONE);
+//      listMovies.postValue(movies);
+      if (movies.size() > 0) {
+         listMovies.postValue(movies);
+      } else {
+         listMovies.postValue(new ArrayList<Movie>());
+      }
    }
-
 
    private static class LoadMoviesAsync extends AsyncTask<Void, Void, ArrayList<Movie>> {
       private final WeakReference<MovieHelper> weakMovieHelper;
-      private final WeakReference<LoadMoviesCallback> weakCallback;
+      private final WeakReference<LoadCallback> weakCallback;
 
-      private LoadMoviesAsync(MovieHelper MovieHelper, LoadMoviesCallback callback) {
-         weakMovieHelper = new WeakReference<>(MovieHelper);
+      private LoadMoviesAsync(MovieHelper movieHelper, LoadCallback callback) {
+         weakMovieHelper = new WeakReference<>(movieHelper);
          weakCallback = new WeakReference<>(callback);
       }
-
       @Override
       protected void onPreExecute() {
          super.onPreExecute();
          weakCallback.get().preExecute();
       }
-
       @Override
       protected ArrayList<Movie> doInBackground(Void... voids) {
-         Cursor dataCursor = weakMovieHelper.get().queryAllMovie();
-         return MappingHelper.mapCursorToArrayList(dataCursor);
+         Cursor dataCursor = weakMovieHelper.get().queryAll();
+         return mapCursorToArrayList(dataCursor);
       }
 
       @Override
-      protected void onPostExecute(ArrayList<Movie> Movies) {
-         super.onPostExecute(Movies);
-         weakCallback.get().postExecute(Movies);
+      protected void onPostExecute(ArrayList<Movie> movies) {
+         super.onPostExecute(movies);
+         weakCallback.get().postExecute(movies);
       }
    }
-   private static class LoadTvShowAsync extends AsyncTask<Void, Void, ArrayList<Movie>> {
-      private final WeakReference<TvShowHelper> weakTvShowHelper;
-      private final WeakReference<LoadMoviesCallback> weakCallback;
 
-      private LoadTvShowAsync(TvShowHelper tvShowHelper, LoadMoviesCallback callback) {
+   private static class LoadTvShowsAsync extends AsyncTask<Void, Void, ArrayList<Movie>> {
+      private final WeakReference<TvShowHelper> weakTvShowHelper;
+      private final WeakReference<LoadCallback> weakCallback;
+
+      private LoadTvShowsAsync(TvShowHelper tvShowHelper, LoadCallback callback) {
          weakTvShowHelper = new WeakReference<>(tvShowHelper);
          weakCallback = new WeakReference<>(callback);
       }
@@ -175,14 +253,28 @@ public class MovieViewModel extends ViewModel implements LoadMoviesCallback {
 
       @Override
       protected ArrayList<Movie> doInBackground(Void... voids) {
-         Cursor dataCursor = weakTvShowHelper.get().queryAllTvShow();
-         return MappingHelper.mapCursorToArrayList(dataCursor);
+         Cursor dataCursor = weakTvShowHelper.get().queryAll();
+         return mapCursorToArrayList(dataCursor);
       }
 
       @Override
-      protected void onPostExecute(ArrayList<Movie> Movies) {
-         super.onPostExecute(Movies);
-         weakCallback.get().postExecute(Movies);
+      protected void onPostExecute(ArrayList<Movie> movies) {
+         super.onPostExecute(movies);
+         weakCallback.get().postExecute(movies);
       }
+   }
+
+   private static ArrayList<Movie> mapCursorToArrayList(Cursor moviesCursor) {
+      ArrayList<Movie> moviesList = new ArrayList<>();
+
+      while (moviesCursor.moveToNext()) {
+         String id = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(ID));
+         String name = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(NAME));
+         String description = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(DESCRIPTION));
+         String photo = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(PHOTO));
+         moviesList.add(new Movie(id, name, description, photo));
+      }
+
+      return moviesList;
    }
 }

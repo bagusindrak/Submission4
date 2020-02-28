@@ -24,14 +24,15 @@ import com.thinking.submission4.ui.adapter.CardViewMovieAdapter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import static com.thinking.submission4.ui.Constant.ARG_SECTION_NUMBER;
+import static com.thinking.submission4.ui.Constant.SECTION_MOVIE;
+
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class MovieFragment extends Fragment {
 
-   private static final String ARG_SECTION_NUMBER = "section_number";
-   private static final int SECTION_MOVIE = 1;
    private RecyclerView rvMovies;
    private ArrayList<Movie> listMovie = new ArrayList<>();
    private ProgressBar progressBar;
@@ -67,7 +68,6 @@ public class MovieFragment extends Fragment {
       progressBar = view.findViewById(R.id.progressBar);
       movieViewModel = new ViewModelProvider(getViewModelStore(),
               new ViewModelProvider.NewInstanceFactory()).get(MovieViewModel.class);
-
       showRecyclerCardView();
 
       int index = 1;
@@ -77,6 +77,7 @@ public class MovieFragment extends Fragment {
          intent.putExtra(ARG_SECTION_NUMBER, index);
       }
       if (index == SECTION_MOVIE) {
+
          movieViewModel.setMovie();
          showLoading(true);
          movieViewModel.getMovies().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
