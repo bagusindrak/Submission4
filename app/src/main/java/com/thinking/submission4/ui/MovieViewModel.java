@@ -45,8 +45,6 @@ public class MovieViewModel extends ViewModel{
    private MovieHelper movieHelper;
    private Activity activity;
 
-   private ArrayList<Movie> list = new ArrayList<>();
-
    void setMovie() {
       AsyncHttpClient client = new AsyncHttpClient();
       final ArrayList<Movie> listItems = new ArrayList<>();
@@ -132,6 +130,16 @@ public class MovieViewModel extends ViewModel{
          tvShowHelper = TvShowHelper.getInstance(activity.getApplicationContext());
    }
 
+   public TvShowHelper getTvShowHelper() {
+      return tvShowHelper;
+   }
+
+   public MovieHelper getMovieHelper() {
+      return movieHelper;
+   }
+
+
+
    void openDBHelper(int index) {
       if (index == SECTION_MOVIE)
          movieHelper.open();
@@ -177,18 +185,22 @@ public class MovieViewModel extends ViewModel{
 
 
    @SuppressLint("StaticFieldLeak")
-   void setMovieFav() {
+   void setFav(final int index) {
       try {
-         new AsyncTask<MovieHelper, CardViewMovieAdapter, ArrayList<Movie>>(){
+         new AsyncTask<Void, Void, ArrayList<Movie>>(){
             @Override
-            protected ArrayList<Movie> doInBackground(MovieHelper... movieHelpers) {
-               Cursor moviesCursor = movieHelper.queryAll();
+            protected ArrayList<Movie> doInBackground(Void... voids) {
+               Cursor cursor;
+               if(index == SECTION_MOVIE)
+               cursor = movieHelper.queryAll();
+               else
+               cursor = tvShowHelper.queryAll();
                ArrayList<Movie> moviesList = new ArrayList<>();
-               while (moviesCursor.moveToNext()) {
-                  String id = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(ID));
-                  String name = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(NAME));
-                  String description = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(DESCRIPTION));
-                  String photo = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(PHOTO));
+               while (cursor.moveToNext()) {
+                  String id = cursor.getString(cursor.getColumnIndexOrThrow(ID));
+                  String name = cursor.getString(cursor.getColumnIndexOrThrow(NAME));
+                  String description = cursor.getString(cursor.getColumnIndexOrThrow(DESCRIPTION));
+                  String photo = cursor.getString(cursor.getColumnIndexOrThrow(PHOTO));
                   moviesList.add(new Movie(id, name, description, photo));
                }
                return moviesList;
@@ -213,13 +225,13 @@ public class MovieViewModel extends ViewModel{
          new AsyncTask<MovieHelper, CardViewMovieAdapter, ArrayList<Movie>>(){
             @Override
             protected ArrayList<Movie> doInBackground(MovieHelper... movieHelpers) {
-               Cursor moviesCursor = movieHelper.queryAll();
+               Cursor cursor = movieHelper.queryAll();
                ArrayList<Movie> moviesList = new ArrayList<>();
-               while (moviesCursor.moveToNext()) {
-                  String id = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(ID));
-                  String name = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(NAME));
-                  String description = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(DESCRIPTION));
-                  String photo = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(PHOTO));
+               while (cursor.moveToNext()) {
+                  String id = cursor.getString(cursor.getColumnIndexOrThrow(ID));
+                  String name = cursor.getString(cursor.getColumnIndexOrThrow(NAME));
+                  String description = cursor.getString(cursor.getColumnIndexOrThrow(DESCRIPTION));
+                  String photo = cursor.getString(cursor.getColumnIndexOrThrow(PHOTO));
                   moviesList.add(new Movie(id, name, description, photo));
                }
                return moviesList;

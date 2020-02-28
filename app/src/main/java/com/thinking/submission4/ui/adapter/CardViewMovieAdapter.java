@@ -30,6 +30,7 @@ import static com.thinking.submission4.ui.Constant.EXTRA_MOVIE;
 import static com.thinking.submission4.ui.Constant.EXTRA_POSITION;
 
 public class CardViewMovieAdapter extends RecyclerView.Adapter<CardViewMovieAdapter.CardViewViewHolder> {
+
    private ArrayList<Movie> listMovies = new ArrayList<>();
 
    public void setListMovies(ArrayList<Movie> items) {
@@ -40,6 +41,9 @@ public class CardViewMovieAdapter extends RecyclerView.Adapter<CardViewMovieAdap
       notifyDataSetChanged();
    }
 
+   public ArrayList<Movie> getListMovies() {
+      return listMovies;
+   }
    @Override
    public int getItemViewType(int position) {
       return super.getItemViewType(position);

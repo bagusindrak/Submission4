@@ -3,6 +3,8 @@ package com.thinking.submission4.ui;
 
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.database.Cursor;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,20 +21,30 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.thinking.submission4.R;
+import com.thinking.submission4.db.MovieHelper;
 import com.thinking.submission4.entity.Movie;
 import com.thinking.submission4.ui.adapter.CardViewMovieAdapter;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import static android.provider.BaseColumns._ID;
+import static android.provider.ContactsContract.CommonDataKinds.Organization.TITLE;
+import static com.thinking.submission4.db.DatabaseContract.MovieColumns.DESCRIPTION;
+import static com.thinking.submission4.db.DatabaseContract.MovieColumns.ID;
+import static com.thinking.submission4.db.DatabaseContract.MovieColumns.NAME;
+import static com.thinking.submission4.db.DatabaseContract.MovieColumns.PHOTO;
 import static com.thinking.submission4.ui.Constant.ARG_SECTION_NUMBER;
 import static com.thinking.submission4.ui.Constant.SECTION_MOVIE;
 
 /**
  * A simple {@link Fragment} subclass.
  */
-public class FavoriteFragment extends Fragment{
+public class FavoriteFragment extends Fragment implements LoadCallback{
 
+
+   private static final String EXTRA_STATE = "EXTRA_STATE";
 
    private RecyclerView rvMovies;
    private ArrayList<Movie> listMovie = new ArrayList<>();
@@ -86,22 +98,20 @@ public class FavoriteFragment extends Fragment{
          movieViewModel.openDBHelper(index);
       }
 
+      // ROTATE STATE
+      if (savedInstanceState == null) {
+         // proses ambil data
+         new LoadMoviesAsync(movieViewModel, this);
+         } else {
+         ArrayList<Movie> list = savedInstanceState.getParcelableArrayList(EXTRA_STATE);
+         if (list != null) {
+            cardViewHeroAdapter.setListMovies(list);
+         }
+      }
       if (index == SECTION_MOVIE) {
-
-         movieViewModel.setMovieFav();
-         showLoading(true);
-         movieViewModel.getMovieFav().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
-            @Override
-            public void onChanged(ArrayList<Movie> movies) {
-               if (movies != null) {
-                  cardViewHeroAdapter.setListMovies(movies);
-                  showLoading(false);
-               }
-            }
-         });
+         new LoadMoviesAsync(movieViewModel, this);
       } else {
-
-         movieViewModel.setMovieFav();
+         movieViewModel.setFav(index);
          showLoading(true);
          movieViewModel.getTvShowFav().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
             @Override
@@ -134,6 +144,12 @@ public class FavoriteFragment extends Fragment{
    }
 
    @Override
+   public void onSaveInstanceState(Bundle outState) {
+      super.onSaveInstanceState(outState);
+      outState.putParcelableArrayList(EXTRA_STATE, cardViewHeroAdapter.getListMovies());
+   }
+
+   @Override
    public void onConfigurationChanged(@NonNull Configuration newConfig) {
       super.onConfigurationChanged(newConfig);
       sDefSystemLanguage = newConfig.locale.getLanguage();
@@ -150,4 +166,69 @@ public class FavoriteFragment extends Fragment{
       movieViewModel.closeDBHelper(section);
    }
 
+   @Override
+   public void preExecute() {
+      showLoading(true);
+   }
+
+   @Override
+   public void postExecute(ArrayList<Movie> movies) {
+      showLoading(false);
+      if (movies.size() > 0) {
+         cardViewHeroAdapter.setListMovies(movies);
+      } else {
+         cardViewHeroAdapter.setListMovies(new ArrayList<Movie>());
+         showSnackbarMessage("Tidak ada data saat ini");
+      }
+   }
+
+   private static class LoadMoviesAsync extends AsyncTask<Void, Void, ArrayList<Movie>> {
+      private final WeakReference<MovieViewModel> weakViewModel;
+      private final int index = 1;
+      private final WeakReference<LoadCallback> weakCallback;
+
+      private LoadMoviesAsync(MovieViewModel viewModel, LoadCallback callback) {
+         weakViewModel = new WeakReference<>(viewModel);
+         weakCallback = new WeakReference<>(callback);
+      }
+
+      @Override
+      protected void onPreExecute() {
+         super.onPreExecute();
+         weakCallback.get().preExecute();
+      }
+
+      @Override
+      protected ArrayList<Movie> doInBackground(Void... voids) {
+         Cursor moviesCursor;
+         if(index == SECTION_MOVIE)
+         moviesCursor = weakViewModel.get().getMovieHelper().queryAll();
+         else
+         moviesCursor = weakViewModel.get().getTvShowHelper().queryAll();
+
+         ArrayList<Movie> moviesList = new ArrayList<>();
+         while (moviesCursor.moveToNext()) {
+            String id = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(ID));
+            String name = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(NAME));
+            String description = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(DESCRIPTION));
+            String photo = moviesCursor.getString(moviesCursor.getColumnIndexOrThrow(PHOTO));
+            moviesList.add(new Movie(id, name, description, photo));
+         }
+
+         return moviesList;
+      }
+
+      @Override
+      protected void onPostExecute(ArrayList<Movie> movies) {
+         super.onPostExecute(movies);
+         weakCallback.get().postExecute(movies);
+      }
+   }
+
+}
+
+interface LoadCallback {
+   void preExecute();
+
+   void postExecute(ArrayList<Movie> movies);
 }
