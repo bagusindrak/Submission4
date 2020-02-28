@@ -12,6 +12,7 @@ import android.widget.ProgressBar;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -30,7 +31,7 @@ import static com.thinking.submission4.ui.Constant.SECTION_MOVIE;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class FavoriteFragment extends Fragment {
+public class FavoriteFragment extends Fragment{
 
 
    private RecyclerView rvMovies;
@@ -73,44 +74,41 @@ public class FavoriteFragment extends Fragment {
    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
       super.onViewCreated(view, savedInstanceState);
       initComponent(view);
-
       int index = 1;
-         movieViewModel.setDBHelper(index);
-         movieViewModel.openDBHelper(index);
 
       if (getArguments() != null) {
          index = getArguments().getInt(ARG_SECTION_NUMBER);
+         movieViewModel.setDBHelper(index);
+         movieViewModel.openDBHelper(index);
          section = index;
          Intent intent = new Intent();
          intent.putExtra(ARG_SECTION_NUMBER, index);
+         showSnackbarMessage(String.valueOf(index));
       }
+
       if (index == SECTION_MOVIE) {
-         movieViewModel.setFav(index);
+         movieViewModel.setMovieFav();
          showLoading(true);
-         if(movieViewModel.getFavMovies() == null)
-            showSnackbarMessage("KOSONG MOVIE");
-//         movieViewModel.getFavMovies().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
-//            @Override
-//            public void onChanged(ArrayList<Movie> movies) {
-//               if (movies != null) {
-//                  cardViewHeroAdapter.setListMovies(movies);
-//                  showLoading(false);
-//               }
-//            }
-//         });
+         movieViewModel.getMovieFav().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
+            @Override
+            public void onChanged(ArrayList<Movie> movies) {
+               if (movies != null) {
+                  cardViewHeroAdapter.setListMovies(movies);
+                  showLoading(false);
+               }
+            }
+         });
       } else {
-         movieViewModel.setFav(index);
-         showSnackbarMessage("SET TV");
-//         showLoading(true);
-//         movieViewModel.getFavTvShows().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
-//            @Override
-//            public void onChanged(ArrayList<Movie> movies) {
-//               if (movies != null) {
-//                  cardViewHeroAdapter.setListMovies(movies);
-//                  showLoading(false);
-//               }
-//            }
-//         });
+         showLoading(true);
+         movieViewModel.getTvShowFav().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
+            @Override
+            public void onChanged(ArrayList<Movie> movies) {
+               if (movies != null) {
+                  cardViewHeroAdapter.setListMovies(movies);
+                  showLoading(false);
+               }
+            }
+         });
       }
    }
 
@@ -148,4 +146,5 @@ public class FavoriteFragment extends Fragment {
       super.onDestroy();
       movieViewModel.closeDBHelper(section);
    }
+
 }

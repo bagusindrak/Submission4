@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -77,7 +78,6 @@ public class MovieFragment extends Fragment {
          intent.putExtra(ARG_SECTION_NUMBER, index);
       }
       if (index == SECTION_MOVIE) {
-
          movieViewModel.setMovie();
          showLoading(true);
          movieViewModel.getMovies().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
