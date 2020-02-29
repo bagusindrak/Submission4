@@ -8,7 +8,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -84,7 +83,7 @@ public class MovieFragment extends Fragment {
             @Override
             public void onChanged(ArrayList<Movie> movies) {
                if (movies != null) {
-                  cardViewHeroAdapter.setListMovies(movies);
+                  cardViewHeroAdapter.setListMovies(movies, SECTION_MOVIE);
                   showLoading(false);
                }
             }
@@ -96,7 +95,7 @@ public class MovieFragment extends Fragment {
             @Override
             public void onChanged(ArrayList<Movie> movies) {
                if (movies != null) {
-                  cardViewHeroAdapter.setListMovies(movies);
+                  cardViewHeroAdapter.setListMovies(movies, 2);
                   showLoading(false);
                }
             }
@@ -109,7 +108,6 @@ public class MovieFragment extends Fragment {
       cardViewHeroAdapter = new CardViewMovieAdapter();
       cardViewHeroAdapter.notifyDataSetChanged();
       rvMovies.setAdapter(cardViewHeroAdapter);
-
    }
 
    private void showLoading(Boolean state) {

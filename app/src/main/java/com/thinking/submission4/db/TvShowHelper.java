@@ -9,18 +9,17 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import static android.provider.BaseColumns._ID;
 import static com.thinking.submission4.db.DatabaseContract.MovieColumns.ID;
-import static com.thinking.submission4.db.DatabaseContract.TABLE_MOVIE;
 import static com.thinking.submission4.db.DatabaseContract.TABLE_TV_SHOW;
 
 public class TvShowHelper {
    private static final String DATABASE_TABLE = TABLE_TV_SHOW;
-   private static DBHelperTvShow dbHelperTvShow;
+   private static DatabaseHelper databaseHelper;
    private static TvShowHelper INSTANCE;
 
    private static SQLiteDatabase database;
 
    private TvShowHelper(Context context) {
-      dbHelperTvShow = new DBHelperTvShow(context);
+      databaseHelper = new DatabaseHelper(context);
    }
 
    //   menginisiasi database.
@@ -37,11 +36,11 @@ public class TvShowHelper {
 
    //   membuka dan menutup koneksi ke database-nya.
    public void open() throws SQLException {
-      database = dbHelperTvShow.getWritableDatabase();
+      database = databaseHelper.getWritableDatabase();
    }
 
    public void close() {
-      dbHelperTvShow.close();
+      databaseHelper.close();
       if (database.isOpen())
          database.close();
    }

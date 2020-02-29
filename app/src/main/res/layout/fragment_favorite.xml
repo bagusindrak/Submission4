@@ -13,12 +13,21 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
-        android:visibility="gone"/>
+        android:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_movies"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/rv_movies"
-        tools:listitem="@layout/item_cardview_movie"/>
+        tools:listitem="@layout/item_cardview_movie" />
+
+    <ImageView
+        android:id="@+id/img"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:src="@drawable/ic_local_movies"
+        android:visibility="gone" />
 
 </RelativeLayout>

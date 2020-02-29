@@ -13,13 +13,13 @@ import static com.thinking.submission4.db.DatabaseContract.TABLE_MOVIE;
 
 public class MovieHelper {
    private static final String DATABASE_TABLE = TABLE_MOVIE;
-   private static DBHelperMovie dbHelperMovie;
+   private static DatabaseHelper databaseHelper;
    private static MovieHelper INSTANCE;
 
    private static SQLiteDatabase database;
 
    private MovieHelper(Context context) {
-      dbHelperMovie = new DBHelperMovie(context);
+      databaseHelper = new DatabaseHelper(context);
    }
 
    //   menginisiasi database.
@@ -36,11 +36,11 @@ public class MovieHelper {
 
    //   membuka dan menutup koneksi ke database-nya.
    public void open() throws SQLException {
-      database = dbHelperMovie.getWritableDatabase();
+      database = databaseHelper.getWritableDatabase();
    }
 
    public void close() {
-      dbHelperMovie.close();
+      databaseHelper.close();
       if (database.isOpen())
          database.close();
    }

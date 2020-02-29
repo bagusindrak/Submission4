@@ -1,7 +1,6 @@
 package com.thinking.submission4.ui;
 
-import android.content.ContentValues;
-import android.database.Cursor;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.Menu;
@@ -10,7 +9,6 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,14 +23,16 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.google.android.material.snackbar.Snackbar;
 import com.thinking.submission4.R;
-import com.thinking.submission4.db.DatabaseContract;
 import com.thinking.submission4.db.MovieHelper;
 import com.thinking.submission4.db.TvShowHelper;
 import com.thinking.submission4.entity.Movie;
 
-import static com.thinking.submission4.ui.Constant.ARG_SECTION_NUMBER;
 import static com.thinking.submission4.ui.Constant.EXTRA_MOVIE;
-import static com.thinking.submission4.ui.Constant.EXTRA_POSITION;
+import static com.thinking.submission4.ui.Constant.EXTRA_SECTION;
+import static com.thinking.submission4.ui.Constant.RESULT_ADD;
+import static com.thinking.submission4.ui.Constant.RESULT_DELETE;
+import static com.thinking.submission4.ui.Constant.SECTION_MOVIE;
+import static com.thinking.submission4.ui.Constant.STATUS_FAV;
 
 
 public class DetailActivity extends AppCompatActivity {
@@ -44,36 +44,28 @@ public class DetailActivity extends AppCompatActivity {
    private int index;
    private MovieViewModel movieViewModel;
 
-   public static final int REQUEST_ADD = 100;
-   public static final int RESULT_ADD = 101;
-   public static final int REQUEST_UPDATE = 200;
-   public static final int RESULT_UPDATE = 201;
-   public static final int RESULT_DELETE = 301;
-   private final int ALERT_DIALOG_CLOSE = 10;
-   private final int ALERT_DIALOG_DELETE = 20;
-
    private Movie movie;
 
-   @Override
-   protected void onCreate(Bundle savedInstanceState) {
-      super.onCreate(savedInstanceState);
-      setContentView(R.layout.activity_detail);
-
+   private void initComponent() {
       tvName = findViewById(R.id.txt_name);
       tvDescription = findViewById(R.id.txt_description);
       img = findViewById(R.id.img_photo);
       progressBar = findViewById(R.id.progressBar);
       movieViewModel = new ViewModelProvider(getViewModelStore(),
               new ViewModelProvider.NewInstanceFactory()).get(MovieViewModel.class);
-      movieViewModel.setActivity(this);
-      movie = getIntent().getParcelableExtra(EXTRA_MOVIE);
-      index = getIntent().getIntExtra(ARG_SECTION_NUMBER, 0);
-      movieViewModel.setDBHelper(index);
-      movieViewModel.openDBHelper(index);
+      index = getIntent().getIntExtra(EXTRA_SECTION, 1);
+   }
 
+   @Override
+   protected void onCreate(Bundle savedInstanceState) {
+      super.onCreate(savedInstanceState);
+      setContentView(R.layout.activity_detail);
+      initComponent();
+
+      movie = getIntent().getParcelableExtra(EXTRA_MOVIE);
       showLoading(true);
       if (movie != null) {
-//         position = getIntent().getIntExtra(EXTRA_POSITION, 0);
+         movieViewModel.setItemMovie(movie);
          tvName.setText(movie.getName());
          tvDescription.setText(movie.getDescription());
          Glide.with(this)
@@ -101,6 +93,7 @@ public class DetailActivity extends AppCompatActivity {
       getSupportActionBar().setDisplayShowHomeEnabled(true);
    }
 
+
    private void showLoading(Boolean state) {
       if (state) {
          progressBar.setVisibility(View.VISIBLE);
@@ -119,30 +112,68 @@ public class DetailActivity extends AppCompatActivity {
    public boolean onPrepareOptionsMenu(Menu menu) {
       MenuItem item = menu.findItem(R.id.action_favorite);
       if (movie != null) {
-         if (movieViewModel.isFavDB(movie, index)) {
-            setIconFav(item, true);
+         if (index == SECTION_MOVIE) {
+            movieViewModel.setMovieHelper(MovieHelper.getInstance(getApplicationContext()));
+            if (movieViewModel.isFavMovie()) {
+               setIconFav(item, true);
+            } else {
+               setIconFav(item, false);
+            }
          } else {
-            setIconFav(item, false);
+            movieViewModel.setTvShowHelper(TvShowHelper.getInstance(getApplicationContext()));
+            if (movieViewModel.isFavTvShow()) {
+               setIconFav(item, true);
+            } else {
+               setIconFav(item, false);
+            }
          }
       }
       item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
          @Override
          public boolean onMenuItemClick(MenuItem item) {
             if (!isFav) {
-               if (movieViewModel.insertFav(movie, index) > 0) {
-                  setIconFav(item, true);
-                  showSnackbarMessage("Sukses nemambah data");
+               if (index == SECTION_MOVIE) {
+                  if (movieViewModel.insertMovieFav() > 0) {
+                     Intent intent = new Intent();
+                     intent.putExtra(STATUS_FAV, RESULT_ADD);
+                     setIconFav(item, true);
+                     showSnackbarMessage("Sukses nemambah Movie");
+                  } else {
+                     setIconFav(item, false);
+                     showSnackbarMessage("Gagal nemambah data");
+                  }
                } else {
-                  setIconFav(item, false);
-                  showSnackbarMessage("Gagal nemambah data");
+                  if (movieViewModel.insertTvShowFav() > 0) {
+                     Intent intent = new Intent();
+                     intent.putExtra(STATUS_FAV, RESULT_ADD);
+                     setIconFav(item, true);
+                     showSnackbarMessage("Sukses nemambah TV Show");
+                  } else {
+                     setIconFav(item, false);
+                     showSnackbarMessage("Gagal nemambah data");
+                  }
                }
-            }else {
-               if(movieViewModel.deleteFav(movie, index) > 0){
-                  setIconFav(item,false);
-                  showSnackbarMessage("Sukses menghapus data");
-               }else {
-                  setIconFav(item,true);
-                  showSnackbarMessage("Gagal menghapus data");
+            } else {
+               if (index == SECTION_MOVIE) {
+                  if (movieViewModel.deleteMovieFav() > 0) {
+                     Intent intent = new Intent();
+                     intent.putExtra(STATUS_FAV, RESULT_DELETE);
+                     setIconFav(item, false);
+                     showSnackbarMessage("Sukses menghapus data");
+                  } else {
+                     setIconFav(item, true);
+                     showSnackbarMessage("Gagal menghapus data");
+                  }
+               } else {
+                  if (movieViewModel.deleteTvShowFav() > 0) {
+                     Intent intent = new Intent();
+                     intent.putExtra(STATUS_FAV, RESULT_DELETE);
+                     setIconFav(item, false);
+                     showSnackbarMessage("Sukses menghapus data");
+                  } else {
+                     setIconFav(item, true);
+                     showSnackbarMessage("Gagal menghapus data");
+                  }
                }
             }
 
@@ -169,7 +200,12 @@ public class DetailActivity extends AppCompatActivity {
    @Override
    protected void onDestroy() {
       super.onDestroy();
-      movieViewModel.closeDBHelper(index);
+      if (index == SECTION_MOVIE) {
+         movieViewModel.closeMovieHelper();
+      } else {
+         movieViewModel.closeTvShowHelper();
+      }
+
    }
 
    private void showSnackbarMessage(String message) {

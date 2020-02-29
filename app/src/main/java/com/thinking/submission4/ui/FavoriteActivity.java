@@ -1,22 +1,16 @@
 package com.thinking.submission4.ui;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
-import androidx.viewpager.widget.ViewPager;
-
-import android.content.Intent;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.viewpager.widget.ViewPager;
+
 import com.google.android.material.tabs.TabLayout;
 import com.thinking.submission4.R;
-import com.thinking.submission4.ui.adapter.SectionsPagerAdapter;
 import com.thinking.submission4.ui.adapter.SectionsPagerFavoriteAdapter;
-
-import java.util.List;
 
 public class FavoriteActivity extends AppCompatActivity {
 
@@ -44,7 +38,7 @@ public class FavoriteActivity extends AppCompatActivity {
 
    @Override
    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-      if(item.getItemId() == android.R.id.home){
+      if (item.getItemId() == android.R.id.home) {
          finish();
       }
       return super.onOptionsItemSelected(item);

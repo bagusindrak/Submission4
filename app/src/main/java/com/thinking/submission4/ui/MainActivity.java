@@ -14,9 +14,6 @@ import com.google.android.material.tabs.TabLayout;
 import com.thinking.submission4.R;
 import com.thinking.submission4.ui.adapter.SectionsPagerAdapter;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class MainActivity extends AppCompatActivity {
 
    @Override

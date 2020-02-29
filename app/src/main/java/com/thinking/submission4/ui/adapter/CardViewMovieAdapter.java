@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,23 +28,22 @@ import com.thinking.submission4.ui.DetailActivity;
 import java.util.ArrayList;
 
 import static com.thinking.submission4.ui.Constant.EXTRA_MOVIE;
-import static com.thinking.submission4.ui.Constant.EXTRA_POSITION;
+import static com.thinking.submission4.ui.Constant.EXTRA_SECTION;
 
 public class CardViewMovieAdapter extends RecyclerView.Adapter<CardViewMovieAdapter.CardViewViewHolder> {
 
    private ArrayList<Movie> listMovies = new ArrayList<>();
+   private int section;
 
-   public void setListMovies(ArrayList<Movie> items) {
+   public void setListMovies(ArrayList<Movie> items, int section) {
       if (listMovies.size() > 0) {
          this.listMovies.clear();
       }
       listMovies.addAll(items);
       notifyDataSetChanged();
+      this.section = section;
    }
 
-   public ArrayList<Movie> getListMovies() {
-      return listMovies;
-   }
    @Override
    public int getItemViewType(int position) {
       return super.getItemViewType(position);
@@ -85,9 +85,8 @@ public class CardViewMovieAdapter extends RecyclerView.Adapter<CardViewMovieAdap
       holder.itemView.setOnClickListener(new View.OnClickListener() {
          @Override
          public void onClick(View v) {
-
             Intent moveWithObjectIntent = new Intent(v.getContext(), DetailActivity.class);
-            moveWithObjectIntent.putExtra(EXTRA_POSITION, holder.getAdapterPosition());
+            moveWithObjectIntent.putExtra(EXTRA_SECTION, section);
             moveWithObjectIntent.putExtra(EXTRA_MOVIE, listMovies.get(holder.getAdapterPosition()));
             v.getContext().startActivity(moveWithObjectIntent);
          }
