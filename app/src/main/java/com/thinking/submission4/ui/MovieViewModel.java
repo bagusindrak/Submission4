@@ -16,10 +16,12 @@ import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.thinking.submission4.db.MovieHelper;
 import com.thinking.submission4.db.TvShowHelper;
 import com.thinking.submission4.entity.Movie;
+import com.thinking.submission4.ui.adapter.MappingHelper;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 import cz.msebera.android.httpclient.Header;
@@ -31,7 +33,7 @@ import static com.thinking.submission4.db.DatabaseContract.MovieColumns.PHOTO;
 import static com.thinking.submission4.ui.Constant.API_KEY;
 import static com.thinking.submission4.ui.Constant.POSTER_SIZE;
 
-public class MovieViewModel extends ViewModel {
+class MovieViewModel extends ViewModel {
    private MutableLiveData<ArrayList<Movie>> listMovies = new MutableLiveData<>();
 
    private TvShowHelper tvShowHelper;
@@ -104,21 +106,17 @@ public class MovieViewModel extends ViewModel {
       });
    }
 
-   public void setTvShowHelper(TvShowHelper tvShowHelper) {
+   void setTvShowHelper(TvShowHelper tvShowHelper) {
       this.tvShowHelper = tvShowHelper;
       this.tvShowHelper.open();
    }
 
-   public void setMovieHelper(MovieHelper movieHelper) {
+   void setMovieHelper(MovieHelper movieHelper) {
       this.movieHelper = movieHelper;
       this.movieHelper.open();
    }
 
    LiveData<ArrayList<Movie>> getMovies() {
-      return listMovies;
-   }
-
-   LiveData<ArrayList<Movie>> getTvShows() {
       return listMovies;
    }
 
@@ -170,72 +168,80 @@ public class MovieViewModel extends ViewModel {
       return tvShowHelper.deleteById(String.valueOf(movie.getId()));
    }
 
-   @SuppressLint("StaticFieldLeak")
-   void setMovieFav() {
-      try {
-         new AsyncTask<MovieHelper, Void, ArrayList<Movie>>() {
-            @Override
-            protected ArrayList<Movie> doInBackground(MovieHelper... movieHelpers) {
-               Cursor cursor = movieHelper.queryAll();
-               ArrayList<Movie> moviesList = new ArrayList<>();
-               while (cursor.moveToNext()) {
-                  String id = cursor.getString(cursor.getColumnIndexOrThrow(ID));
-                  String name = cursor.getString(cursor.getColumnIndexOrThrow(NAME));
-                  String description = cursor.getString(cursor.getColumnIndexOrThrow(DESCRIPTION));
-                  String photo = cursor.getString(cursor.getColumnIndexOrThrow(PHOTO));
-                  moviesList.add(new Movie(id, name, description, photo));
-               }
-               return moviesList;
-            }
+   void setMovieFav(LoadCallback loadCallback) {
+      new LoadMoviesAsync(movieHelper, loadCallback, listMovies).execute();
+   }
 
-            @Override
-            protected void onPostExecute(ArrayList<Movie> movies) {
-               super.onPostExecute(movies);
-               listMovies.postValue(movies);
-            }
-         }.execute();
-      } catch (Exception e) {
-         Log.e("TAG", "setTvShowFav: ", e);
+   void setTvShowFav(LoadCallback loadCallback) {
+      new LoadTvShowAsync(tvShowHelper, loadCallback, listMovies).execute();
+   }
+
+   private static class LoadMoviesAsync extends AsyncTask<Void, Void, ArrayList<Movie>> {
+      private final WeakReference<MovieHelper> weakMovieHelper;
+      private final WeakReference<LoadCallback> weakCallback;
+      private final WeakReference<MutableLiveData<ArrayList<Movie>>> weakLiveData;
+
+      private LoadMoviesAsync(MovieHelper noteHelper, LoadCallback callback, MutableLiveData<ArrayList<Movie>> liveData) {
+         weakMovieHelper = new WeakReference<>(noteHelper);
+         weakCallback = new WeakReference<>(callback);
+         weakLiveData = new WeakReference<>(liveData);
+      }
+
+      @Override
+      protected void onPreExecute() {
+         super.onPreExecute();
+         weakCallback.get().preExecute();
+      }
+
+      @Override
+      protected ArrayList<Movie> doInBackground(Void... voids) {
+         Cursor dataCursor = weakMovieHelper.get().queryAll();
+         return MappingHelper.mapCursorToArrayList(dataCursor);
+      }
+
+      @Override
+      protected void onPostExecute(ArrayList<Movie> movies) {
+         super.onPostExecute(movies);
+         weakLiveData.get().postValue(movies);
+         weakCallback.get().postExecute(movies);
       }
    }
 
-   @SuppressLint("StaticFieldLeak")
-   void setTvShowFav() {
-      try {
-         new AsyncTask<TvShowHelper, Void, ArrayList<Movie>>() {
-            @Override
-            protected ArrayList<Movie> doInBackground(TvShowHelper... tvShowHelpers) {
-               Cursor cursor = tvShowHelper.queryAll();
-               ArrayList<Movie> moviesList = new ArrayList<>();
-               while (cursor.moveToNext()) {
-                  String id = cursor.getString(cursor.getColumnIndexOrThrow(ID));
-                  String name = cursor.getString(cursor.getColumnIndexOrThrow(NAME));
-                  String description = cursor.getString(cursor.getColumnIndexOrThrow(DESCRIPTION));
-                  String photo = cursor.getString(cursor.getColumnIndexOrThrow(PHOTO));
-                  moviesList.add(new Movie(id, name, description, photo));
-               }
-               return moviesList;
-            }
+   private static class LoadTvShowAsync extends AsyncTask<Void, Void, ArrayList<Movie>> {
+      private final WeakReference<TvShowHelper> weakTvShowHelper;
+      private final WeakReference<LoadCallback> weakCallback;
+      private final WeakReference<MutableLiveData<ArrayList<Movie>>> weakLiveData;
 
-            @Override
-            protected void onPostExecute(ArrayList<Movie> movies) {
-               super.onPostExecute(movies);
-               listMovies.postValue(movies);
-            }
-         }.execute();
-      } catch (Exception e) {
-         Log.e("TAG", "setTvShowFav: ", e);
+      private LoadTvShowAsync(TvShowHelper tvShowHelper, LoadCallback callback, MutableLiveData<ArrayList<Movie>> liveData) {
+         weakTvShowHelper = new WeakReference<>(tvShowHelper);
+         weakCallback = new WeakReference<>(callback);
+         weakLiveData = new WeakReference<>(liveData);
+      }
+
+      @Override
+      protected void onPreExecute() {
+         super.onPreExecute();
+         weakCallback.get().preExecute();
+      }
+
+      @Override
+      protected ArrayList<Movie> doInBackground(Void... voids) {
+         Cursor dataCursor = weakTvShowHelper.get().queryAll();
+         return MappingHelper.mapCursorToArrayList(dataCursor);
+      }
+
+      @Override
+      protected void onPostExecute(ArrayList<Movie> movies) {
+         super.onPostExecute(movies);
+         weakLiveData.get().postValue(movies);
+         weakCallback.get().postExecute(movies);
       }
    }
+}
 
-   LiveData<ArrayList<Movie>> getMovieFav() {
-      return listMovies;
-   }
+interface LoadCallback {
+   void preExecute();
 
-
-   LiveData<ArrayList<Movie>> getTvShowFav() {
-      return listMovies;
-   }
-
+   void postExecute(ArrayList<Movie> movies);
 }
 

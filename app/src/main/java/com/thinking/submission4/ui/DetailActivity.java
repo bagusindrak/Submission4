@@ -135,7 +135,6 @@ public class DetailActivity extends AppCompatActivity {
                if (index == SECTION_MOVIE) {
                   if (movieViewModel.insertMovieFav() > 0) {
                      Intent intent = new Intent();
-                     intent.putExtra(STATUS_FAV, RESULT_ADD);
                      setIconFav(item, true);
                      showSnackbarMessage("Sukses nemambah Movie");
                   } else {
@@ -144,8 +143,6 @@ public class DetailActivity extends AppCompatActivity {
                   }
                } else {
                   if (movieViewModel.insertTvShowFav() > 0) {
-                     Intent intent = new Intent();
-                     intent.putExtra(STATUS_FAV, RESULT_ADD);
                      setIconFav(item, true);
                      showSnackbarMessage("Sukses nemambah TV Show");
                   } else {
@@ -157,7 +154,6 @@ public class DetailActivity extends AppCompatActivity {
                if (index == SECTION_MOVIE) {
                   if (movieViewModel.deleteMovieFav() > 0) {
                      Intent intent = new Intent();
-                     intent.putExtra(STATUS_FAV, RESULT_DELETE);
                      setIconFav(item, false);
                      showSnackbarMessage("Sukses menghapus data");
                   } else {
@@ -167,7 +163,6 @@ public class DetailActivity extends AppCompatActivity {
                } else {
                   if (movieViewModel.deleteTvShowFav() > 0) {
                      Intent intent = new Intent();
-                     intent.putExtra(STATUS_FAV, RESULT_DELETE);
                      setIconFav(item, false);
                      showSnackbarMessage("Sukses menghapus data");
                   } else {
@@ -188,6 +183,7 @@ public class DetailActivity extends AppCompatActivity {
    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
       switch (item.getItemId()) {
          case android.R.id.home:
+
             finish();
             break;
          case R.id.action_favorite:

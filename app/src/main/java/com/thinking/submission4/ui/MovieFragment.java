@@ -34,11 +34,10 @@ import static com.thinking.submission4.ui.Constant.SECTION_MOVIE;
 public class MovieFragment extends Fragment {
 
    private RecyclerView rvMovies;
-   private ArrayList<Movie> listMovie = new ArrayList<>();
    private ProgressBar progressBar;
    private MovieViewModel movieViewModel;
    private CardViewMovieAdapter cardViewHeroAdapter;
-   public static String sDefSystemLanguage;
+   private static String sDefSystemLanguage;
 
 
    public static MovieFragment newInstance(int index) {
@@ -91,7 +90,7 @@ public class MovieFragment extends Fragment {
       } else {
          movieViewModel.setTvShow();
          showLoading(true);
-         movieViewModel.getTvShows().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
+         movieViewModel.getMovies().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
             @Override
             public void onChanged(ArrayList<Movie> movies) {
                if (movies != null) {

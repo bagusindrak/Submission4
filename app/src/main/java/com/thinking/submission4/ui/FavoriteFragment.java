@@ -18,7 +18,6 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.snackbar.Snackbar;
 import com.thinking.submission4.R;
 import com.thinking.submission4.db.MovieHelper;
 import com.thinking.submission4.db.TvShowHelper;
@@ -34,14 +33,15 @@ import static com.thinking.submission4.ui.Constant.SECTION_MOVIE;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class FavoriteFragment extends Fragment {
+public class FavoriteFragment extends Fragment implements LoadCallback {
 
    private RecyclerView rvMovies;
    private ImageView img;
    private ProgressBar progressBar;
    private MovieViewModel movieViewModel;
    private CardViewMovieAdapter cardViewHeroAdapter;
-   static String sDefSystemLanguage;
+   private static String sDefSystemLanguage;
+   private int index = 1;
 
 
    public static FavoriteFragment newInstance(int index) {
@@ -50,7 +50,6 @@ public class FavoriteFragment extends Fragment {
       Bundle bundle = new Bundle();
       bundle.putInt(ARG_SECTION_NUMBER, index);
       fragment.setArguments(bundle);
-      String sDefSystemLanguage = Locale.getDefault().getLanguage();
       return fragment;
    }
 
@@ -78,38 +77,16 @@ public class FavoriteFragment extends Fragment {
    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
       super.onViewCreated(view, savedInstanceState);
       initComponent(view);
-      int index = 1;
+
       if (getArguments() != null) {
          index = getArguments().getInt(ARG_SECTION_NUMBER);
          Intent intent = new Intent();
          intent.putExtra(ARG_SECTION_NUMBER, index);
       }
-
       if (index == SECTION_MOVIE) {
-         movieViewModel.setMovieFav();
-         showLoading(true);
-
-         movieViewModel.getMovieFav().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
-            @Override
-            public void onChanged(ArrayList<Movie> movies) {
-               if (movies != null) {
-                  cardViewHeroAdapter.setListMovies(movies, SECTION_MOVIE);
-                  showLoading(false);
-               }
-            }
-         });
+         movieViewModel.setMovieFav(this);
       } else {
-         movieViewModel.setTvShowFav();
-         showLoading(true);
-         movieViewModel.getTvShowFav().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
-            @Override
-            public void onChanged(ArrayList<Movie> movies) {
-               if (movies != null) {
-                  cardViewHeroAdapter.setListMovies(movies, 2);
-                  showLoading(false);
-               }
-            }
-         });
+         movieViewModel.setTvShowFav(this);
       }
    }
 
@@ -147,4 +124,40 @@ public class FavoriteFragment extends Fragment {
       movieViewModel.closeTvShowHelper();
    }
 
+   @Override
+   public void preExecute() {
+
+   }
+
+   @Override
+   public void postExecute(ArrayList<Movie> movies) {
+      if (movies.size() > 0) {
+         if (index == SECTION_MOVIE) {
+            showLoading(true);
+            movieViewModel.getMovies().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
+               @Override
+               public void onChanged(ArrayList<Movie> movies) {
+                  if (movies != null) {
+                     cardViewHeroAdapter.setListMovies(movies, SECTION_MOVIE);
+                     showLoading(false);
+                  }
+               }
+            });
+         } else {
+            showLoading(true);
+            movieViewModel.getMovies().observe(getViewLifecycleOwner(), new Observer<ArrayList<Movie>>() {
+               @Override
+               public void onChanged(ArrayList<Movie> movies) {
+                  if (movies != null) {
+                     cardViewHeroAdapter.setListMovies(movies, 2);
+                     showLoading(false);
+                  }
+               }
+            });
+         }
+      } else {
+         showLoading(false);
+         img.setVisibility(View.VISIBLE);
+      }
+   }
 }
